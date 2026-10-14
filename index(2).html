@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misión: Atención con Empatía - Hospital Simulator 3D Style</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        medical: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0284c7', 600: '#0369a1', 700: '#035485' },
+                        obstetric: { 50: '#fdf2f8', 100: '#fce7f3', 500: '#ec4899', 600: '#db2777', 700: '#be185d' },
+                        empathy: { gold: '#f59e0b', green: '#10b981', purple: '#8b5cf6' }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        display: ['Fredoka', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #0b1120;
+            color: #f8fafc;
+            min-height: 100vh;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        .font-display { font-family: 'Fredoka', sans-serif; }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            color: #1e293b;
+        }
+        #gameCanvas {
+            background-color: #0f172a;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 0 30px rgba(56, 189, 248, 0.05);
+            border-radius: 1.5rem;
+            touch-action: none;
+        }
+        .bounce-slight { animation: bounceSlight 1.5s infinite; }
+        @keyframes bounceSlight {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .pulse-glow-gold { animation: pulseGlow 1.5s infinite; }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.9); }
+        }
+    </style>
+</head>
+<body class="flex flex-col justify-between min-h-screen overflow-x-hidden">
+
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
+            
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('hospital')">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 via-pink-500 to-sky-500 flex items-center justify-center text-white text-xl font-bold shadow-md pulse-glow-gold">
+                    <i class="fa-solid fa-hospital-user"></i>
+                </div>
+                <div>
+                    <h1 class="font-display text-lg font-bold bg-gradient-to-r from-amber-400 via-pink-400 to-sky-400 bg-clip-text text-transparent">
+                        Misión: Atención con Empatía
+                    </h1>
+                    <p class="text-[11px] text-slate-400 font-medium hidden sm:block">Simulador Hospitalario 3D Estilo My Supermarket & Pizza Ready</p>
+                </div>
+            </div>
+
+            <!-- Dashboard Stats -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <div class="bg-indigo-950/80 border border-indigo-500/40 px-3 py-1 rounded-xl flex items-center space-x-2">
+                    <i class="fa-solid fa-layer-group text-indigo-400 text-xs"></i>
+                    <div>
+                        <span class="text-[9px] text-indigo-300 font-bold block uppercase">Nivel</span>
+                        <span id="level-display" class="font-display font-bold text-indigo-200 text-xs sm:text-sm">Nivel 1</span>
+                    </div>
+                </div>
+
+                <div class="bg-amber-950/80 border border-amber-500/40 px-3 py-1 rounded-xl flex items-center space-x-2">
+                    <i class="fa-solid fa-star text-amber-400 text-xs"></i>
+                    <div>
+                        <span class="text-[9px] text-amber-300 font-bold block uppercase">Puntos</span>
+                        <span id="score-display" class="font-display font-bold text-amber-200 text-xs sm:text-sm">0 Pts</span>
+                    </div>
+                </div>
+
+                <div class="bg-emerald-950/80 border border-emerald-500/40 px-3 py-1 rounded-xl flex items-center space-x-2">
+                    <i class="fa-solid fa-heart text-emerald-400 text-xs"></i>
+                    <div>
+                        <span class="text-[9px] text-emerald-300 font-bold block uppercase">Empatía</span>
+                        <span id="empathy-display" class="font-display font-bold text-emerald-200 text-xs sm:text-sm">100%</span>
+                    </div>
+                </div>
+
+                <div class="bg-sky-950/80 border border-sky-500/40 px-3 py-1 rounded-xl flex items-center space-x-2">
+                    <i class="fa-solid fa-user-check text-sky-400 text-xs"></i>
+                    <div>
+                        <span class="text-[9px] text-sky-300 font-bold block uppercase">Atendidos</span>
+                        <span id="served-display" class="font-display font-bold text-sky-200 text-xs sm:text-sm">0/3</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 flex flex-col justify-center">
+
+        <!-- Navigation Tabs -->
+        <div class="flex space-x-2 bg-slate-800/80 p-1.5 rounded-2xl max-w-md mx-auto mb-4 border border-slate-700">
+            <button id="btn-tab-hospital" onclick="switchTab('hospital')" class="flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-sky-600 text-white shadow-sm flex items-center justify-center">
+                <i class="fa-solid fa-gamepad mr-2"></i>Hospital 3D Interactiva
+            </button>
+            <button id="btn-tab-cases" onclick="switchTab('cases')" class="flex-1 py-2 px-3 rounded-xl font-semibold text-slate-400 text-xs transition-all hover:text-white flex items-center justify-center">
+                <i class="fa-solid fa-clipboard-question mr-2"></i>Tarjetas de Casos
+            </button>
+            <button id="btn-tab-rules" onclick="switchTab('rules')" class="flex-1 py-2 px-3 rounded-xl font-semibold text-slate-400 text-xs transition-all hover:text-white flex items-center justify-center">
+                <i class="fa-solid fa-book-open mr-2"></i>Manual Pedagógico
+            </button>
+        </div>
+
+        <!-- ================= VIEW 1: HOSPITAL 3D INTERACTIVE SIMULATOR ================= -->
+        <div id="view-hospital" class="space-y-4">
+            
+            <div class="bg-gradient-to-r from-sky-900/70 via-indigo-900/70 to-pink-900/70 p-3 sm:p-4 rounded-2xl border border-slate-700 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-300 text-xl">
+                        <i class="fa-solid fa-person-walking-arrow-right"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-display font-bold text-sm text-slate-100 flex items-center">
+                            ¡Controla a la Enfermera y lleva al Paciente a su Consultorio!
+                            <span class="ml-2 text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full uppercase">Estilo My Supermarket</span>
+                        </h2>
+                        <p class="text-xs text-slate-300 mt-0.5">
+                            1. Acércate a la <b>Recepción 🛎️</b> para atender a la paciente. &nbsp;|&nbsp; 2. Camina con ella (la paciente te sigue). &nbsp;|&nbsp; 3. Llévala al consultorio correcto (<b>👨‍⚕️ Médico</b> o <b>🤰 Obstetra</b>).
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="resetCurrentLevel()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded-xl font-bold text-xs transition-all">
+                        <i class="fa-solid fa-arrow-rotate-right mr-1"></i>Reiniciar Nivel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Canvas Container & Touch Joystick Controls -->
+            <div class="relative w-full flex flex-col items-center">
+                
+                <canvas id="gameCanvas" width="950" height="520" class="w-full max-w-5xl h-auto border-2 border-slate-700 shadow-2xl"></canvas>
+
+                <!-- Touch D-Pad for Mobile -->
+                <div class="mt-4 sm:hidden flex flex-col items-center gap-1 bg-slate-800/90 p-3 rounded-2xl border border-slate-700">
+                    <span class="text-[10px] text-slate-400 font-bold mb-1 uppercase tracking-wider">Control Táctil de la Enfermera</span>
+                    <button ontouchstart="handleTouchMove('up')" touchend="handleTouchEnd()" class="w-12 h-12 bg-slate-700 active:bg-sky-600 rounded-xl text-lg font-bold">⬆️</button>
+                    <div class="flex gap-4">
+                        <button ontouchstart="handleTouchMove('left')" touchend="handleTouchEnd()" class="w-12 h-12 bg-slate-700 active:bg-sky-600 rounded-xl text-lg font-bold">⬅️</button>
+                        <button ontouchstart="handleTouchMove('down')" touchend="handleTouchEnd()" class="w-12 h-12 bg-slate-700 active:bg-sky-600 rounded-xl text-lg font-bold">⬇️</button>
+                        <button ontouchstart="handleTouchMove('right')" touchend="handleTouchEnd()" class="w-12 h-12 bg-slate-700 active:bg-sky-600 rounded-xl text-lg font-bold">➡️</button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ================= VIEW 2: CASE CARDS ================= -->
+        <div id="view-cases" class="hidden space-y-4">
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+                <h2 class="font-display text-lg font-bold text-slate-100 flex items-center">
+                    <i class="fa-solid fa-address-card text-sky-400 mr-2"></i>
+                    Biblioteca de Tarjetas de Casos Hospitalarios
+                </h2>
+                <p class="text-xs text-slate-400">
+                    Consulta las tarjetas de situaciones reales que encontrarás durante tu jornada en los niveles del hospital.
+                </p>
+
+                <div id="cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- JS Injected Cards -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 3: RULES MANUAL ================= -->
+        <div id="view-rules" class="hidden space-y-4">
+            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-5">
+                <div class="border-b border-slate-800 pb-3">
+                    <h2 class="font-display text-xl font-bold text-slate-100 flex items-center">
+                        <i class="fa-solid fa-book-open text-amber-400 mr-2"></i>
+                        Manual Pedagógico y Reglas de Juego
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Misión: Atención con Empatía — Comunicación Asertiva Hospitalaria</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300">
+                    <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700 space-y-2">
+                        <h3 class="font-bold text-sky-400 text-sm flex items-center"><i class="fa-solid fa-user-doctor mr-2"></i> El Médico 👨‍⚕️</h3>
+                        <p>Evalúa requerimientos generales de salud, explica procedimientos técnicos, medicamentos e indicaciones con palabras claras y accesibles.</p>
+                    </div>
+
+                    <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700 space-y-2">
+                        <h3 class="font-bold text-pink-400 text-sm flex items-center"><i class="fa-solid fa-person-pregnant mr-2"></i> La Obstetra 🤰</h3>
+                        <p>Acompaña la salud sexual, reproductiva y control prenatal. Prioriza la contención emocional, privacidad y la libre elección informada de la gestante.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="dialog-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 hidden">
+        <div class="glass-card w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl relative border-2 border-slate-100 max-h-[92vh] overflow-y-auto space-y-4">
+            
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div class="flex items-center space-x-3">
+                    <div id="modal-patient-avatar" class="w-12 h-12 rounded-2xl bg-sky-100 text-3xl flex items-center justify-center shadow-sm">
+                        🧑
+                    </div>
+                    <div>
+                        <span id="modal-patient-type" class="text-[10px] font-bold uppercase tracking-wider text-sky-600 block">PACIENTE EN CONSULTORIO</span>
+                        <h3 id="modal-patient-name" class="font-display font-bold text-slate-800 text-lg">Consulta Activa</h3>
+                    </div>
+                </div>
+                <div class="bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full text-indigo-700 font-bold text-xs" id="modal-stage-badge">
+                    Etapa 1 / 5
+                </div>
+            </div>
+
+            <!-- Stage Stepper Nodes -->
+            <div class="flex items-center justify-between px-2 py-1 bg-slate-100 rounded-xl">
+                <div id="mod-node-1" class="text-[10px] font-bold text-sky-600 flex items-center"><span class="w-4 h-4 rounded-full bg-sky-600 text-white flex items-center justify-center text-[9px] mr-1">1</span> Caso</div>
+                <div class="h-0.5 w-4 bg-slate-300"></div>
+                <div id="mod-node-2" class="text-[10px] font-medium text-slate-400 flex items-center"><span class="w-4 h-4 rounded-full bg-slate-300 text-slate-600 flex items-center justify-center text-[9px] mr-1">2</span> Necesidad</div>
+                <div class="h-0.5 w-4 bg-slate-300"></div>
+                <div id="mod-node-3" class="text-[10px] font-medium text-slate-400 flex items-center"><span class="w-4 h-4 rounded-full bg-slate-300 text-slate-600 flex items-center justify-center text-[9px] mr-1">3</span> Rol</div>
+                <div class="h-0.5 w-4 bg-slate-300"></div>
+                <div id="mod-node-4" class="text-[10px] font-medium text-slate-400 flex items-center"><span class="w-4 h-4 rounded-full bg-slate-300 text-slate-600 flex items-center justify-center text-[9px] mr-1">4</span> Respuesta</div>
+                <div class="h-0.5 w-4 bg-slate-300"></div>
+                <div id="mod-node-5" class="text-[10px] font-medium text-slate-400 flex items-center"><span class="w-4 h-4 rounded-full bg-slate-300 text-slate-600 flex items-center justify-center text-[9px] mr-1">5</span> Evaluación</div>
+            </div>
+
+            <div id="modal-stage-body" class="space-y-4">
+                <!-- Dynamic injection -->
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Level Complete Modal -->
+    <div id="level-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-lg flex items-center justify-center p-4 hidden">
+        <div class="glass-card w-full max-w-md rounded-3xl p-6 text-center space-y-5 border-2 border-amber-300 shadow-2xl">
+            <div class="text-5xl bounce-slight">🏆</div>
+            <h2 class="font-display font-bold text-2xl text-amber-600">¡Nivel Superado con Éxito!</h2>
+            <p id="level-modal-desc" class="text-xs text-slate-600">Has atendido, guiado y demostrado empatía asertiva con todos los pacientes del hospital.</p>
+            
+            <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-xs text-amber-900 space-y-1">
+                <div class="flex justify-between font-bold"><span>Puntaje Total:</span><span id="level-modal-score" class="text-amber-700">30 Pts</span></div>
+                <div class="flex justify-between font-bold"><span>Nivel de Empatía:</span><span id="level-modal-empathy" class="text-emerald-700">100%</span></div>
+            </div>
+
+            <button onclick="nextLevelAction()" class="w-full py-3 bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-600 hover:to-emerald-600 text-white font-display font-bold text-sm rounded-xl shadow-lg transition-all">
+                Siguiente Nivel <i class="fa-solid fa-arrow-right ml-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const scenarioCards = [
+            {
+                id: 1,
+                level: 1,
+                title: "🟦 Tarjeta 1. Paciente con Miedo",
+                patientType: "Paciente General",
+                patientIcon: "🧑",
+                patientName: "Sr. Carlos Mendoza",
+                targetOffice: "medico", // requires doctor
+                situation: "Un paciente debe someterse a un procedimiento, pero tiene miedo porque no sabe qué le van a realizar.",
+                recommendedRole: "medico",
+                needsOptions: [
+                    { text: "Comprender de forma sencilla el procedimiento e información que reduzca su temor.", correct: true },
+                    { text: "Firmar el consentimiento rápido sin hacer preguntas para no demorar.", correct: false },
+                    { text: "Recibir anestesia fuerte inmediatamente sin explicaciones.", correct: false }
+                ],
+                optionsResponse: [
+                    {
+                        text: "«Entiendo que esta situación pueda generarte miedo. Quiero explicarte en qué consiste el procedimiento en palabras sencillas y responder todas tus preguntas».",
+                        score: 10,
+                        feedback: "¡Excelente! Validaste sus emociones, utilizaste lenguaje claro y creaste un entorno de seguridad."
+                    },
+                    {
+                        text: "«No se preocupe, esto lo hacemos a diario. No hay razón para tener miedo, deje que trabajemos».",
+                        score: 4,
+                        feedback: "Deficiente. Invalida y minimiza las emociones del paciente."
+                    },
+                    {
+                        text: "«Léase este folleto afuera y regrese cuando esté decidido».",
+                        score: 2,
+                        feedback: "Inadecuado. Muestra desinterés y falta de empatía verbal."
+                    }
+                ],
+                learning: "La información comprensible y la escucha activa disminuyen la ansiedad del paciente."
+            },
+            {
+                id: 2,
+                level: 1,
+                title: "🟩 Tarjeta 2. Gestante Preocupada",
+                patientType: "Gestante",
+                patientIcon: "🤰",
+                patientName: "Sra. Elena Gómez",
+                targetOffice: "obstetra", // requires obstetrics
+                situation: "Una gestante acude a su control prenatal manifestando preocupación e incertidumbre porque no comprende algunos cambios físicos durante su gestación.",
+                recommendedRole: "obstetra",
+                needsOptions: [
+                    { text: "Escucha empática, explicación clara de su estado y contención emocional.", correct: true },
+                    { text: "Reposo absoluto obligado sin evaluación clínica previo.", correct: false },
+                    { text: "Que vuelva el próximo mes sin hacer preguntas.", correct: false }
+                ],
+                optionsResponse: [
+                    {
+                        text: "«Comprendo tu preocupación. Cuéntame con confianza qué cambios has notado. Te explicaré detalladamente cuáles son esperables en esta etapa».",
+                        score: 10,
+                        feedback: "¡Súper empático! Escuchaste sus temores, explicaste con calma y mantuviste apertura profesional."
+                    },
+                    {
+                        text: "«Todo eso es normal en el embarazo, no exagere. Siga con su rutina diaria».",
+                        score: 3,
+                        feedback: "Inadecuado. Asume antes de evaluar detenidamente sus síntomas."
+                    },
+                    {
+                        text: "«Si tiene dolor, vaya a emergencias. Aquí solo hacemos fichas».",
+                        score: 2,
+                        feedback: "Deficiente atención obstétrica."
+                    }
+                ],
+                learning: "La atención prenatal requiere escucha atenta, calma y valoración individualizada."
+            },
+            {
+                id: 3,
+                level: 2,
+                title: "🟨 Tarjeta 3. No Comprende Indicaciones",
+                patientType: "Adulto Mayor",
+                patientIcon: "👴",
+                patientName: "Don Roberto",
+                targetOffice: "medico",
+                situation: "Un paciente indica con timidez que no entendió la forma ni los horarios para tomar los medicamentos formulados.",
+                recommendedRole: "medico",
+                needsOptions: [
+                    { text: "Verificación paciente de la comprensión con lenguaje sencillo.", correct: true },
+                    { text: "Que memorice la receta solo leyéndola en voz alta.", correct: false },
+                    { text: "Llamarle la atención por no poner atención en la primera consulta.", correct: false }
+                ],
+                optionsResponse: [
+                    {
+                        text: "«No te preocupes, vamos a repasar la indicación juntos las veces que sean necesarias. ¿Podrías decirme con tus palabras cómo entendiste los horarios?».",
+                        score: 10,
+                        feedback: "¡Formidable! Utilizaste la técnica de verificación de retorno (teach-back) con paciencia."
+                    },
+                    {
+                        text: "«Ya se lo dije dos veces. Léalo bien en su casa con sus anteojos».",
+                        score: 1,
+                        feedback: "Pésimo trato. Genera barreras y atemoriza al adulto mayor."
+                    },
+                    {
+                        text: "«Tómelo en la mañana y en la noche y ya. Siguiente paciente».",
+                        score: 3,
+                        feedback: "Apurado e incompleto."
+                    }
+                ],
+                learning: "Verificar lo que el paciente comprendió es clave para un tratamiento seguro."
+            },
+            {
+                id: 4,
+                level: 2,
+                title: "🟧 Tarjeta 4. Molesto por la Espera",
+                patientType: "Paciente en Espera",
+                patientIcon: "🧑‍🦱",
+                patientName: "Sr. Fernando Ruiz",
+                targetOffice: "medico",
+                situation: "Un usuario lleva más de dos horas esperando su turno y se acerca muy alterado exigiendo ser atendido de inmediato.",
+                recommendedRole: "medico",
+                needsOptions: [
+                    { text: "Validar su molestia, escuchar activamente y brindar orientación clara y transparente.", correct: true },
+                    { text: "Hacerlo pasar inmediatamente ignorando la cola de urgencias.", correct: false },
+                    { text: "Llamar a seguridad para retirarlo de las instalaciones.", correct: false }
+                ],
+                optionsResponse: [
+                    {
+                        text: "«Comprendo totalmente su molestia por la espera. Déjeme revisar de inmediato el estado de su turno para orientarle con transparencia».",
+                        score: 10,
+                        feedback: "¡Extraordinario manejo de crisis! Reconociste su emoción y diste pautas transparentes de seguridad."
+                    },
+                    {
+                        text: "«Tenga paciencia como todos. Hay personas más enfermas que usted».",
+                        score: 2,
+                        feedback: "Acrecienta el conflicto e invalida el malestar."
+                    },
+                    {
+                        text: "«Pase rápido entonces para que no reniegue».",
+                        score: 4,
+                        feedback: "Promesa no sostenible que desorganiza el hospital."
+                    }
+                ],
+                learning: "Afrontar la molestia con asertividad y transparencia reduce la tensión sin hacer falsas promesas."
+            },
+            {
+                id: 5,
+                level: 3,
+                title: "🟥 Tarjeta 5. Expresa Preferencias de Privacidad",
+                patientType: "Gestante en Consulta",
+                patientIcon: "🤰",
+                patientName: "Sra. Lucía Paredes",
+                targetOffice: "obstetra",
+                situation: "Durante la consulta obstétrica, la gestante desea estar acompañada por su pareja y cuidar su intimidad, pero teme que no se respeten sus deseos.",
+                recommendedRole: "obstetra",
+                needsOptions: [
+                    { text: "Respeto por su dignidad, privacidad, acompañamiento y autonomía informada.", correct: true },
+                    { text: "Aceptar órdenes sin derecho a opinar sobre su atención.", correct: false },
+                    { text: "Ingreso de personal en formación sin solicitar su autorización.", correct: false }
+                ],
+                optionsResponse: [
+                    {
+                        text: "«Gracias por expresarme tus preferencias. Para nosotros es fundamental respetar tu intimidad y derecho al acompañamiento. Revisemos juntos el espacio».",
+                        score: 10,
+                        feedback: "¡Atención humanizada modelo! Respetaste la dignidad y autonomía de la paciente."
+                    },
+                    {
+                        text: "«Las reglas del centro las ponemos nosotros. Los acompañantes estorban».",
+                        score: 1,
+                        feedback: "Vulnera los derechos de trato humanizado del paciente."
+                    },
+                    {
+                        text: "«Que pase su acompañante pero hagamos la revisión rápido».",
+                        score: 5,
+                        feedback: "Incompleto en la garantía de privacidad."
+                    }
+                ],
+                learning: "La atención centrada en la persona valora la privacidad y autonomía de decisiones."
+            },
+            {
+                id: 6,
+                level: 3,
+                title: "🟪 Tarjeta 6. Barrera del Idioma",
+                patientType: "Paciente con Barrera Lingüística",
+                patientIcon: "🙋‍♂️",
+                patientName: "Sr. Mateo",
+                targetOffice: "medico",
+                situation: "Un paciente no logra entender el diagnóstico debido al uso de términos médicos complejos o barrera lingüística.",
+                recommendedRole: "medico",
+                needsOptions: [
+                    { text: "Comunicación adaptada, lenguaje claro y apoyo de mediación/interpretación.", correct: true },
+                    { text: "Que le hablen levantando la voz o gritando.", correct: false },
+                    { text: "Dar de alta sin comprobar si comprendió las indicaciones.", correct: false }
+                ],
+                optionsResponse: [
+                    {
+                        text: "«Deseo asegurarme de que comprendas perfectamente tu salud. Explicaré con palabras llanas e imágenes, y si lo necesitas, buscaremos apoyo de interpretación».",
+                        score: 10,
+                        feedback: "¡Inclusión y empatía excepcional! Rompiste la barrera idiomática con asertividad."
+                    },
+                    {
+                        text: "«¡Le dije que tiene cefalea holocraneal! ¿Acaso no entiende castellano?».",
+                        score: 1,
+                        feedback: "Pésimo. Gritar o usar tecnicismos agrava la barrera de comunicación."
+                    },
+                    {
+                        text: "«Tome estas pastillas y nos vemos el mes que viene».",
+                        score: 3,
+                        feedback: "Abandona la responsabilidad pedagógica de la salud."
+                    }
+                ],
+                learning: "La comunicación asertiva debe adaptarse interculturalmente a cada usuario."
+            }
+        ];
+
+        // Game Engine Variables
+        let currentLevel = 1;
+        let globalScore = 0;
+        let empathyPercentage = 100;
+        let levelServedCount = 0;
+
+        let canvas, ctx;
+        let animationFrameId;
+
+        // Player Avatar (The Hospital Nurse / Specialist)
+        const nurse = {
+            x: 475,
+            y: 420,
+            radius: 18,
+            speed: 4.8,
+            color: '#0ea5e9',
+            carryingPatient: null,
+            targetX: 475,
+            targetY: 420
+        };
+
+        // Keyboard tracking
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
+
+        // Hospital Map Layout Zones (Top-Down 3D Perspective Style)
+        const zones = {
+            reception: { x: 380, y: 350, w: 190, h: 90, label: "🛎️ Recepción / Triaje", color: "#fef3c7", borderColor: "#f59e0b" },
+            docOffice: { x: 70, y: 70, w: 240, h: 180, label: "👨‍⚕️ Consultorio Médico", color: "#e0f2fe", borderColor: "#0284c7" },
+            obsOffice: { x: 640, y: 70, w: 240, h: 180, label: "🤰 Consultorio Obstétrico", color: "#fce7f3", borderColor: "#ec4899" },
+            waitingChairs: [
+                { x: 360, y: 240 }, { x: 410, y: 240 }, { x: 470, y: 240 }, { x: 520, y: 240 }, { x: 570, y: 240 }
+            ]
+        };
+
+        let worldPatients = [];
+        let activeModalCase = null;
+        let activeModalStage = 1;
+        let selectedNeedIdx = null;
+        let selectedRoleChoice = null;
+        let selectedResponseIdx = null;
+
+        window.onload = function() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+
+            window.addEventListener('keydown', e => { if (keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+            window.addEventListener('keyup', e => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+            // Direct pointer tap/click support
+            canvas.addEventListener('pointerdown', e => {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                nurse.targetX = (e.clientX - rect.left) * scaleX;
+                nurse.targetY = (e.clientY - rect.top) * scaleY;
+            });
+
+            renderCardsLibrary();
+            loadLevel(currentLevel);
+            animateLoop();
+        };
+
+        function loadLevel(lvl) {
+            currentLevel = lvl;
+            levelServedCount = 0;
+            document.getElementById('level-display').textContent = `Nivel ${currentLevel}`;
+            
+            const levelScenarios = scenarioCards.filter(c => c.level === currentLevel);
+            
+            // Spawn patients sitting in waiting chairs at reception
+            worldPatients = levelScenarios.map((sc, i) => ({
+                scenario: sc,
+                x: zones.waitingChairs[i % zones.waitingChairs.length].x + 15,
+                y: zones.waitingChairs[i % zones.waitingChairs.length].y + 15,
+                startX: zones.waitingChairs[i % zones.waitingChairs.length].x + 15,
+                startY: zones.waitingChairs[i % zones.waitingChairs.length].y + 15,
+                state: 'waiting_chair', // 'waiting_chair', 'at_reception', 'following_nurse', 'consulting', 'completed'
+                icon: sc.patientIcon,
+                name: sc.patientName
+            }));
+
+            updateStatsUI();
+        }
+
+        function updateStatsUI() {
+            const levelScenarios = scenarioCards.filter(c => c.level === currentLevel);
+            document.getElementById('score-display').textContent = `${globalScore} Pts`;
+            document.getElementById('empathy-display').textContent = `${Math.max(0, empathyPercentage)}%`;
+            document.getElementById('served-display').textContent = `${levelServedCount}/${levelScenarios.length}`;
+        }
+
+        function animateLoop() {
+            updateNursePosition();
+            checkInteractions();
+            drawHospitalScene();
+            animationFrameId = requestAnimationFrame(animateLoop);
+        }
+
+        function updateNursePosition() {
+            let dx = 0;
+            let dy = 0;
+
+            if (keys.w || keys.ArrowUp) dy -= nurse.speed;
+            if (keys.s || keys.ArrowDown) dy += nurse.speed;
+            if (keys.a || keys.ArrowLeft) dx -= nurse.speed;
+            if (keys.d || keys.ArrowRight) dx += nurse.speed;
+
+            if (dx !== 0 || dy !== 0) {
+                nurse.x = Math.max(nurse.radius, Math.min(canvas.width - nurse.radius, nurse.x + dx));
+                nurse.y = Math.max(nurse.radius, Math.min(canvas.height - nurse.radius, nurse.y + dy));
+                nurse.targetX = nurse.x;
+                nurse.targetY = nurse.y;
+            } else if (nurse.targetX !== nurse.x || nurse.targetY !== nurse.y) {
+                const pdx = nurse.targetX - nurse.x;
+                const pdy = nurse.targetY - nurse.y;
+                const dist = Math.hypot(pdx, pdy);
+                if (dist > 3) {
+                    nurse.x += (pdx / dist) * nurse.speed;
+                    nurse.y += (pdy / dist) * nurse.speed;
+                }
+            }
+
+            // If nurse is escorting a patient (like in My Supermarket / Pizza Ready), patient walks right behind nurse
+            if (nurse.carryingPatient) {
+                const targetX = nurse.x - 30;
+                const targetY = nurse.y + 10;
+                nurse.carryingPatient.x += (targetX - nurse.carryingPatient.x) * 0.12;
+                nurse.carryingPatient.y += (targetY - nurse.carryingPatient.y) * 0.12;
+            }
+        }
+
+        function handleTouchMove(dir) {
+            keys.w = (dir === 'up');
+            keys.s = (dir === 'down');
+            keys.a = (dir === 'left');
+            keys.d = (dir === 'right');
+        }
+
+        function handleTouchEnd() {
+            keys.w = keys.s = keys.a = keys.d = false;
+        }
+
+        function checkInteractions() {
+            const inReception = isInsideBox(nurse, zones.reception);
+
+            // If nurse approaches reception desk and is not carrying anyone
+            if (inReception && !nurse.carryingPatient) {
+                const waitingPatient = worldPatients.find(p => p.state === 'waiting_chair');
+                if (waitingPatient) {
+                    // Patient steps up to reception to be attended by nurse (My Supermarket style interaction)
+                    waitingPatient.state = 'at_reception';
+                    waitingPatient.x = zones.reception.x + 95;
+                    waitingPatient.y = zones.reception.y + 45;
+                    nurse.carryingPatient = waitingPatient; // Nurse picks up / guides patient
+                    waitingPatient.state = 'following_nurse';
+                }
+            }
+
+            // If nurse carrying patient reaches Doctor's Office
+            const inDocOffice = isInsideBox(nurse, zones.docOffice);
+            if (inDocOffice && nurse.carryingPatient) {
+                const patient = nurse.carryingPatient;
+                nurse.carryingPatient = null;
+                patient.state = 'consulting';
+                patient.x = zones.docOffice.x + 120;
+                patient.y = zones.docOffice.y + 100;
+                openCaseModal(patient);
+            }
+
+            // If nurse carrying patient reaches Obstetric Office
+            const inObsOffice = isInsideBox(nurse, zones.obsOffice);
+            if (inObsOffice && nurse.carryingPatient) {
+                const patient = nurse.carryingPatient;
+                nurse.carryingPatient = null;
+                patient.state = 'consulting';
+                patient.x = zones.obsOffice.x + 120;
+                patient.y = zones.obsOffice.y + 100;
+                openCaseModal(patient);
+            }
+        }
+
+        function isInsideBox(p, box) {
+            return p.x >= box.x && p.x <= box.x + box.w && p.y >= box.y && p.y <= box.y + box.h;
+        }
+
+        function drawHospitalScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Floor Grid Design
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 50) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 50) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+
+            // Draw Consultation Rooms & Reception Zones
+            drawZone(zones.docOffice);
+            drawZone(zones.obsOffice);
+            drawZone(zones.reception);
+
+            // Draw Waiting Room Chairs
+            ctx.fillStyle = '#334155';
+            zones.waitingChairs.forEach(c => {
+                ctx.beginPath();
+                ctx.roundRect(c.x, c.y, 40, 35, 10);
+                ctx.fill();
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+
+            // Draw Patients in World
+            worldPatients.forEach(p => {
+                if (p.state === 'completed') return;
+
+                // Draw Patient bubble & Icon
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 16, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.font = '18px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(p.icon, p.x, p.y);
+
+                if (p.state === 'waiting_chair') {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath(); ctx.arc(p.x + 12, p.y - 12, 5, 0, Math.PI * 2); ctx.fill();
+                } else if (p.state === 'following_nurse') {
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.font = 'bold 10px Plus Jakarta Sans';
+                    ctx.fillText('👣 ¡Guíame al consultorio!', p.x, p.y - 20);
+                }
+            });
+
+            // Draw Nurse Avatar (Specialist in charge)
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = 'rgba(14, 165, 233, 0.4)';
+            ctx.fillStyle = nurse.color;
+            ctx.beginPath();
+            ctx.arc(nurse.x, nurse.y, nurse.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            ctx.font = '16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('👩‍⚕️', nurse.x, nurse.y);
+
+            // Guidance Tooltips
+            if (!nurse.carryingPatient) {
+                const atRec = isInsideBox(nurse, zones.reception);
+                if (atRec && worldPatients.some(p => p.state === 'waiting_chair')) {
+                    drawTooltip(zones.reception.x + 95, zones.reception.y - 15, "🛎️ ¡Atender paciente en recepción!");
+                }
+            } else {
+                const targetText = nurse.carryingPatient.scenario.targetOffice === 'obstetra' ? "➡️ ¡Llévala a la Obstetra 🤰!" : "➡️ ¡Llévalo al Médico 👨‍⚕️!";
+                drawTooltip(nurse.x, nurse.y - 30, targetText);
+            }
+        }
+
+        function drawZone(z) {
+            ctx.fillStyle = z.color;
+            ctx.strokeStyle = z.borderColor;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.roundRect(z.x, z.y, z.w, z.h, 18);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 13px Plus Jakarta Sans';
+            ctx.textAlign = 'center';
+            ctx.fillText(z.label, z.x + z.w / 2, z.y + 24);
+        }
+
+        function drawTooltip(x, y, text) {
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.roundRect(x - 90, y - 14, 180, 28, 14);
+            ctx.fill();
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 11px Plus Jakarta Sans';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, x, y);
+        }
+
+        // ================= 5-STAGE DIALOG MODAL SYSTEM =================
+        function openCaseModal(patientEntity) {
+            activeModalCase = patientEntity;
+            activeModalStage = 1;
+            selectedNeedIdx = null;
+            selectedRoleChoice = null;
+            selectedResponseIdx = null;
+
+            document.getElementById('modal-patient-avatar').textContent = patientEntity.scenario.patientIcon;
+            document.getElementById('modal-patient-name').textContent = patientEntity.scenario.patientName;
+            document.getElementById('modal-patient-type').textContent = patientEntity.scenario.patientType;
+
+            document.getElementById('dialog-modal').classList.remove('hidden');
+            renderModalStage();
+        }
+
+        function renderModalStage() {
+            document.getElementById('modal-stage-badge').textContent = `Etapa ${activeModalStage} de 5`;
+            updateModalStepperUI();
+
+            const body = document.getElementById('modal-stage-body');
+            const sc = activeModalCase.scenario;
+
+            switch (activeModalStage) {
+                case 1:
+                    body.innerHTML = `
+                        <div class="space-y-4">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-800">ETAPA 1. PRESENTACIÓN DEL CASO</span>
+                            <h3 class="font-display text-lg font-bold text-slate-800">${sc.title}</h3>
+
+                            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs leading-relaxed text-slate-700 italic">
+                                "${sc.situation}"
+                            </div>
+
+                            <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 text-amber-900 text-xs">
+                                💡 <b>RETO:</b> Identifica la necesidad emocional y clínica antes de responder.
+                            </div>
+
+                            <div class="flex justify-end pt-2">
+                                <button onclick="setModalStage(2)" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow transition-all">
+                                    Identificar Necesidad <i class="fa-solid fa-arrow-right ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 2:
+                    body.innerHTML = `
+                        <div class="space-y-4">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-800">ETAPA 2. IDENTIFICACIÓN DE LA NECESIDAD</span>
+                            <h3 class="font-display text-base font-bold text-slate-800">¿Qué requiere prioritariamente este paciente?</h3>
+
+                            <div class="space-y-2">
+                                ${sc.needsOptions.map((opt, idx) => `
+                                    <button onclick="selectModalNeed(${idx})" class="w-full text-left p-3 rounded-2xl border-2 text-xs transition-all flex items-center justify-between ${selectedNeedIdx === idx ? 'border-sky-500 bg-sky-50 font-bold text-sky-900' : 'border-slate-200 bg-white hover:border-slate-300'}">
+                                        <span>${opt.text}</span>
+                                        <span class="w-4 h-4 rounded-full border flex items-center justify-center text-[9px] ${selectedNeedIdx === idx ? 'bg-sky-600 text-white border-sky-600' : 'border-slate-300'}">
+                                            ${selectedNeedIdx === idx ? '✓' : ''}
+                                        </span>
+                                    </button>
+                                `).join('')}
+                            </div>
+
+                            <div class="flex justify-end pt-2">
+                                <button onclick="setModalStage(3)" ${selectedNeedIdx === null ? 'disabled class="px-5 py-2.5 bg-slate-200 text-slate-400 font-bold text-xs rounded-xl cursor-not-allowed"' : 'class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow transition-all"'}>
+                                    Confirmar Rol <i class="fa-solid fa-arrow-right ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 3:
+                    body.innerHTML = `
+                        <div class="space-y-4">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-800">ETAPA 3. ELECCIÓN DEL PERSONAJE</span>
+                            <h3 class="font-display text-base font-bold text-slate-800">¿Qué profesional asumirá la conversación?</h3>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div onclick="selectModalRole('medico')" class="p-4 rounded-2xl border-2 cursor-pointer transition-all ${selectedRoleChoice === 'medico' ? 'border-sky-500 bg-sky-50 shadow-md ring-2 ring-sky-200' : 'border-slate-200 bg-white'}">
+                                    <div class="text-3xl text-center mb-1">👨‍⚕️</div>
+                                    <h4 class="font-bold text-center text-xs text-sky-900">El Médico</h4>
+                                    <p class="text-[10px] text-center text-slate-500">Evaluación médica general.</p>
+                                </div>
+                                <div onclick="selectModalRole('obstetra')" class="p-4 rounded-2xl border-2 cursor-pointer transition-all ${selectedRoleChoice === 'obstetra' ? 'border-pink-500 bg-pink-50 shadow-md ring-2 ring-pink-200' : 'border-slate-200 bg-white'}">
+                                    <div class="text-3xl text-center mb-1">🤰</div>
+                                    <h4 class="font-bold text-center text-xs text-pink-900">La Obstetra</h4>
+                                    <p class="text-[10px] text-center text-slate-500">Salud reproductiva y prenatal.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end pt-2">
+                                <button onclick="setModalStage(4)" ${selectedRoleChoice === null ? 'disabled class="px-5 py-2.5 bg-slate-200 text-slate-400 font-bold text-xs rounded-xl cursor-not-allowed"' : 'class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow transition-all"'}>
+                                    Dar Respuesta <i class="fa-solid fa-arrow-right ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 4:
+                    body.innerHTML = `
+                        <div class="space-y-4">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-800">ETAPA 4. RESPUESTA ASERTIVA</span>
+                            <h3 class="font-display text-base font-bold text-slate-800">Selecciona la Expresión de Comunicación Asertiva</h3>
+
+                            <div class="space-y-2">
+                                ${sc.optionsResponse.map((resp, idx) => `
+                                    <div onclick="selectModalResponse(${idx})" class="p-3 rounded-2xl border-2 cursor-pointer transition-all text-xs leading-relaxed ${selectedResponseIdx === idx ? 'border-sky-500 bg-sky-50 shadow-md ring-2 ring-sky-200' : 'border-slate-200 bg-white'}">
+                                        ${resp.text}
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <div class="flex justify-end pt-2">
+                                <button onclick="setModalStage(5)" ${selectedResponseIdx === null ? 'disabled class="px-5 py-2.5 bg-slate-200 text-slate-400 font-bold text-xs rounded-xl cursor-not-allowed"' : 'class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition-all"'}>
+                                    Evaluar Atención <i class="fa-solid fa-award ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 5:
+                    const chosen = sc.optionsResponse[selectedResponseIdx];
+                    const score = chosen.score;
+
+                    globalScore += score;
+                    if (score < 6) empathyPercentage = Math.max(0, empathyPercentage - 15);
+
+                    activeModalCase.state = 'completed';
+                    levelServedCount++;
+                    updateStatsUI();
+
+                    body.innerHTML = `
+                        <div class="space-y-4 text-center">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-800">ETAPA 5. EVALUACIÓN Y RETROALIMENTACIÓN</span>
+
+                            <div class="p-4 rounded-2xl ${score >= 8 ? 'bg-emerald-50 border-2 border-emerald-200' : 'bg-amber-50 border-2 border-amber-200'}">
+                                <div class="text-4xl mb-1">${score >= 8 ? '🎉' : '💡'}</div>
+                                <h3 class="font-display text-xl font-bold ${score >= 8 ? 'text-emerald-900' : 'text-amber-900'}">
+                                    Puntaje: ${score} / 10 Puntos
+                                </h3>
+                                <p class="text-xs ${score >= 8 ? 'text-emerald-700' : 'text-amber-800'} mt-1 font-medium">
+                                    ${chosen.feedback}
+                                </p>
+                            </div>
+
+                            <div class="p-3 bg-sky-50 rounded-xl border border-sky-200 text-xs text-left text-sky-900 space-y-1">
+                                <b>🎓 Clave Pedagógica:</b>
+                                <p>${sc.learning}</p>
+                            </div>
+
+                            <div class="pt-2 flex justify-center">
+                                <button onclick="closeModalAndCheckLevel()" class="px-6 py-2.5 bg-slate-800 text-white font-bold text-xs rounded-xl shadow">
+                                    Continuar en el Hospital <i class="fa-solid fa-check ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+            }
+        }
+
+        function setModalStage(stg) { activeModalStage = stg; renderModalStage(); }
+        function selectModalNeed(idx) { selectedNeedIdx = idx; renderModalStage(); }
+        function selectModalRole(role) { selectedRoleChoice = role; renderModalStage(); }
+        function selectModalResponse(idx) { selectedResponseIdx = idx; renderModalStage(); }
+
+        function updateModalStepperUI() {
+            for (let i = 1; i <= 5; i++) {
+                const node = document.getElementById(`mod-node-${i}`);
+                if (node) {
+                    if (i === activeModalStage) {
+                        node.className = "text-[10px] font-bold text-sky-600 flex items-center";
+                    } else if (i < activeModalStage) {
+                        node.className = "text-[10px] font-semibold text-emerald-600 flex items-center";
+                    } else {
+                        node.className = "text-[10px] font-medium text-slate-400 flex items-center";
+                    }
+                }
+            }
+        }
+
+        function closeModalAndCheckLevel() {
+            document.getElementById('dialog-modal').classList.add('hidden');
+
+            const levelScenarios = scenarioCards.filter(c => c.level === currentLevel);
+            if (levelServedCount >= levelScenarios.length) {
+                document.getElementById('level-modal-score').textContent = `${globalScore} Pts`;
+                document.getElementById('level-modal-empathy').textContent = `${empathyPercentage}%`;
+                document.getElementById('level-modal').classList.remove('hidden');
+            }
+        }
+
+        function nextLevelAction() {
+            document.getElementById('level-modal').classList.add('hidden');
+            if (currentLevel < 3) {
+                loadLevel(currentLevel + 1);
+            } else {
+                alert("¡Felicidades! Has completado con éxito todos los niveles del simulador hospitalario.");
+                loadLevel(1);
+            }
+        }
+
+        function resetCurrentLevel() { loadLevel(currentLevel); }
+
+        function renderCardsLibrary() {
+            const grid = document.getElementById('cards-grid');
+            grid.innerHTML = scenarioCards.map(c => `
+                <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-2 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-sky-400">${c.title}</span>
+                        <span class="text-[10px] bg-slate-700 px-2 py-0.5 rounded-full text-slate-300">Nivel ${c.level}</span>
+                    </div>
+                    <p class="text-slate-300 italic">"${c.situation}"</p>
+                    <div class="pt-2 border-t border-slate-700 text-amber-300 font-semibold">
+                        💡 ${c.learning}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function switchTab(tab) {
+            document.getElementById('view-hospital').classList.add('hidden');
+            document.getElementById('view-cases').classList.add('hidden');
+            document.getElementById('view-rules').classList.add('hidden');
+
+            document.getElementById('btn-tab-hospital').className = "flex-1 py-2 px-3 rounded-xl font-semibold text-slate-400 text-xs transition-all hover:text-white flex items-center justify-center";
+            document.getElementById('btn-tab-cases').className = "flex-1 py-2 px-3 rounded-xl font-semibold text-slate-400 text-xs transition-all hover:text-white flex items-center justify-center";
+            document.getElementById('btn-tab-rules').className = "flex-1 py-2 px-3 rounded-xl font-semibold text-slate-400 text-xs transition-all hover:text-white flex items-center justify-center";
+
+            if (tab === 'hospital') {
+                document.getElementById('view-hospital').classList.remove('hidden');
+                document.getElementById('btn-tab-hospital').className = "flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-sky-600 text-white shadow-sm flex items-center justify-center";
+            } else if (tab === 'cases') {
+                document.getElementById('view-cases').classList.remove('hidden');
+                document.getElementById('btn-tab-cases').className = "flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-sky-600 text-white shadow-sm flex items-center justify-center";
+            } else if (tab === 'rules') {
+                document.getElementById('view-rules').classList.remove('hidden');
+                document.getElementById('btn-tab-rules').className = "flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-sky-600 text-white shadow-sm flex items-center justify-center";
+            }
+        }
+    </script>
+</body>
+</html>
